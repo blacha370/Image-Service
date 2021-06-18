@@ -9,6 +9,14 @@ class ThumbnailSize(models.Model):
     def __str__(self):
         return str(self.height)
 
+    @classmethod
+    def get_or_create_validated(cls, height):
+        if not isinstance(height, int) or isinstance(height, bool):
+            raise TypeError
+        elif height <= 0:
+            raise ValueError
+        return cls.objects.get_or_create(height=height)[0]
+
 
 class AccountTierClass(models.Model):
     name = models.CharField(max_length=50, unique=True)
