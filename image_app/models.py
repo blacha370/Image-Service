@@ -1,6 +1,8 @@
 from django.db import models
 from django.core.validators import MinValueValidator
 from django.contrib.auth.models import User
+from datetime import datetime
+from image_service.settings import STATIC_URL
 
 
 class ThumbnailSize(models.Model):
@@ -85,6 +87,29 @@ class Image(models.Model):
 
     def __str__(self):
         return self.name
+
+    @classmethod
+    def _generate_name(cls, extension, owner):
+        name = str(owner.pk) + str(int(datetime.now().timestamp())) + str(cls.objects.filter(owner=owner).count())
+        return name + extension
+
+    @classmethod
+    def _generate_url(cls, name, owner):
+        if AccountTier.objects.get(user=owner).tier.original_image:
+            return STATIC_URL + name
+        return
+
+    @classmethod
+    def create_image(cls, owner, extension):
+        if not isinstance(owner, User) or not isinstance(extension, str):
+            raise TypeError
+        if extension not in ['.jpg', '.png']:
+            raise ValueError
+        name = cls._generate_name(extension, owner)
+        url = cls._generate_url(name, owner)
+        image = cls(name=name, url=url, owner=owner)
+        image.save()
+        return image
 
 
 class Thumbnail(models.Model):
