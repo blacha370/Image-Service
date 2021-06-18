@@ -93,8 +93,8 @@ class Image(models.Model):
         name = str(owner.pk) + str(int(datetime.now().timestamp())) + str(cls.objects.filter(owner=owner).count())
         return name + extension
 
-    @classmethod
-    def _generate_url(cls, name, owner):
+    @staticmethod
+    def _generate_url(name, owner):
         if AccountTier.objects.get(user=owner).tier.original_image:
             return STATIC_URL + name
         return
@@ -120,3 +120,28 @@ class Thumbnail(models.Model):
 
     def __str__(self):
         return self.name
+
+    @classmethod
+    def _generate_name(cls, image, thumbnail_size):
+        index = image.name.rfind('.')
+        image_name, extension = image.name[:index], image.name[index:]
+        name = image_name + '_' + str(thumbnail_size.height) + extension
+        if cls.objects.filter(name=name).count():
+            raise ValueError
+        return name
+
+    @staticmethod
+    def _generate_url(name):
+        return STATIC_URL + name
+
+    @classmethod
+    def create_thumbnail(cls, image, thumbnail_size):
+        if not isinstance(image, Image) or not isinstance(thumbnail_size, ThumbnailSize):
+            raise TypeError
+        if thumbnail_size not in AccountTier.objects.get(user=image.owner).tier.thumbnail_sizes.all():
+            raise ValueError
+        name = cls._generate_name(image, thumbnail_size)
+        url = cls._generate_url(name)
+        thumbnail = cls(name=name, url=url, image=image, thumbnail_size=thumbnail_size)
+        thumbnail.save()
+        return thumbnail
