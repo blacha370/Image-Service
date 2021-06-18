@@ -27,6 +27,29 @@ class AccountTierClass(models.Model):
     def __str__(self):
         return self.name
 
+    @classmethod
+    def get_or_create_validated(cls, name, thumbnail_sizes, original_image=False, expires_link=False):
+        if not isinstance(name, str) or [size for size in thumbnail_sizes if not isinstance(size, ThumbnailSize)] \
+                or not len(thumbnail_sizes )or not isinstance(original_image, bool) or not \
+                isinstance(expires_link, bool):
+            raise TypeError
+        elif len(name) > 50 or cls.objects.filter(name=name) or\
+                cls._check_if_same_tier_class_exists(thumbnail_sizes, original_image, expires_link):
+            raise ValueError
+        account_tier_class = cls(name=name, original_image=original_image, expires_link=expires_link)
+        account_tier_class.save()
+        account_tier_class.thumbnail_sizes.add(*thumbnail_sizes)
+        return account_tier_class
+
+    @classmethod
+    def _check_if_same_tier_class_exists(cls, thumbnail_sizes, original_image, expires_link):
+        tiers = cls.objects.filter(thumbnail_sizes__in=[size.id for size in thumbnail_sizes],
+                                   original_image=original_image, expires_link=expires_link)
+        for tier in tiers:
+            if thumbnail_sizes == list(tier.thumbnail_sizes.all()):
+                return True
+        return False
+
 
 class AccountTier(models.Model):
     tier = models.ForeignKey(AccountTierClass, on_delete=models.CASCADE)
