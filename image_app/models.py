@@ -58,6 +58,25 @@ class AccountTier(models.Model):
     def __str__(self):
         return str(self.tier) + ': ' + self.user.username
 
+    @classmethod
+    def add_user_to_account_tier(cls, tier, user):
+        if not isinstance(tier, AccountTierClass) or not isinstance(user, User):
+            raise TypeError
+        elif cls.objects.filter(user=user).count():
+            raise ValueError
+        account_tier = cls(tier=tier, user=user)
+        account_tier.save()
+        return account_tier
+
+    def change_account_tier(self, tier):
+        if not isinstance(tier, AccountTierClass):
+            raise TypeError
+        elif self.tier == tier:
+            raise ValueError
+        self.tier = tier
+        self.save()
+        return self
+
 
 class Image(models.Model):
     name = models.CharField(max_length=50, unique=True)
