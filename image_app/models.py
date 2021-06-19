@@ -2,7 +2,7 @@ from django.db import models
 from django.core.validators import MinValueValidator
 from django.contrib.auth.models import User
 from datetime import datetime
-from image_service.settings import STATIC_URL
+from image_service.settings import MEDIA_URL
 
 
 class ThumbnailSize(models.Model):
@@ -96,7 +96,7 @@ class Image(models.Model):
     @staticmethod
     def _generate_url(name, owner):
         if AccountTier.objects.get(user=owner).tier.original_image:
-            return STATIC_URL + name
+            return MEDIA_URL + name
         return
 
     @classmethod
@@ -132,7 +132,7 @@ class Thumbnail(models.Model):
 
     @staticmethod
     def _generate_url(name):
-        return STATIC_URL + name
+        return MEDIA_URL + name
 
     @classmethod
     def create_thumbnail(cls, image, thumbnail_size):
