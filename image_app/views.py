@@ -1,5 +1,6 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from rest_framework.viewsets import ViewSet
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import UploadSerializer, ImageSerializer, ThumbnailSerialzer
@@ -30,3 +31,10 @@ class UploadViewSet(LoginRequiredMixin, ViewSet):
         return Response(
             {'message': 'Unsupported media type. Valid media types: "image/jpeg", "image/png"'},
             status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
+
+
+class ListImages(LoginRequiredMixin, APIView):
+    def get(self, request):
+        images = Image.objects.filter(owner=request.user)
+        images_serializer = ImageSerializer(images, many=True)
+        return Response(images_serializer.data)
