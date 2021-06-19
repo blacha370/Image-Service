@@ -145,3 +145,7 @@ class Thumbnail(models.Model):
         thumbnail = cls(name=name, url=url, image=image, thumbnail_size=thumbnail_size)
         thumbnail.save()
         return thumbnail
+
+    @property
+    def size(self):
+        return str(self.thumbnail_size.height) + 'px'
