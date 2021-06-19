@@ -1,0 +1,46 @@
+[
+  {
+    "model": "image_app.thumbnailsize",
+    "pk": 1,
+    "fields": {
+      "height": 200
+    }
+  },
+  {
+    "model": "image_app.thumbnailsize",
+    "pk": 2,
+    "fields": {
+      "height": 400
+    }
+  },
+  {
+    "model": "image_app.accounttierclass",
+    "pk": 1,
+    "fields": {
+      "name": "Basic",
+      "original_image": false,
+      "expires_link": false,
+      "thumbnail_sizes": [1]
+    }
+  },
+  {
+    "model": "image_app.accounttierclass",
+    "pk": 2,
+    "fields": {
+      "name": "Premium",
+      "original_image": true,
+      "expires_link": false,
+      "thumbnail_sizes": [1, 2]
+    }
+  },
+  {
+    "model": "image_app.accounttierclass",
+    "pk": 3,
+    "fields": {
+      "name": "Enterprise",
+      "original_image": true,
+      "expires_link": true,
+      "thumbnail_sizes": [1, 2]
+    }
+  }
+]
