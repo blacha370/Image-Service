@@ -82,7 +82,7 @@ class AccountTier(models.Model):
 
 class Image(models.Model):
     name = models.CharField(max_length=50, unique=True)
-    url = models.URLField(max_length=200, unique=True, null=True)
+    url = models.ImageField(upload_to='images/', blank=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def __str__(self):
@@ -93,12 +93,6 @@ class Image(models.Model):
         name = str(owner.pk) + str(int(datetime.now().timestamp())) + str(cls.objects.filter(owner=owner).count())
         return name + extension
 
-    @staticmethod
-    def _generate_url(name, owner):
-        if AccountTier.objects.get(user=owner).tier.original_image:
-            return MEDIA_URL + name
-        return
-
     @classmethod
     def create_image(cls, owner, extension):
         if not isinstance(owner, User) or not isinstance(extension, str):
@@ -106,15 +100,20 @@ class Image(models.Model):
         if extension not in ['.jpg', '.png']:
             raise ValueError
         name = cls._generate_name(extension, owner)
-        url = cls._generate_url(name, owner)
-        image = cls(name=name, url=url, owner=owner)
+        image = cls(name=name, owner=owner)
         image.save()
         return image
+
+    def upload_image(self, file):
+        file.name = self.name
+        self.url = file
+        self.save()
+        return self.url
 
 
 class Thumbnail(models.Model):
     name = models.CharField(max_length=60, unique=True)
-    url = models.URLField(max_length=210, unique=True)
+    url = models.ImageField(upload_to='thumbnails/', null=True)
     image = models.ForeignKey(Image, on_delete=models.CASCADE)
     thumbnail_size = models.ForeignKey(ThumbnailSize, on_delete=models.CASCADE)
 
@@ -130,10 +129,6 @@ class Thumbnail(models.Model):
             raise ValueError
         return name
 
-    @staticmethod
-    def _generate_url(name):
-        return MEDIA_URL + name
-
     @classmethod
     def create_thumbnail(cls, image, thumbnail_size):
         if not isinstance(image, Image) or not isinstance(thumbnail_size, ThumbnailSize):
@@ -141,10 +136,15 @@ class Thumbnail(models.Model):
         if thumbnail_size not in AccountTier.objects.get(user=image.owner).tier.thumbnail_sizes.all():
             raise ValueError
         name = cls._generate_name(image, thumbnail_size)
-        url = cls._generate_url(name)
-        thumbnail = cls(name=name, url=url, image=image, thumbnail_size=thumbnail_size)
+        thumbnail = cls(name=name, image=image, thumbnail_size=thumbnail_size)
         thumbnail.save()
         return thumbnail
+
+    def upload_thumbnail(self, file):
+        file.name = self.name
+        self.url = file
+        self.save()
+        return self.url
 
     @property
     def size(self):

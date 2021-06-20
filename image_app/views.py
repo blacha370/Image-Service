@@ -15,15 +15,16 @@ class UploadViewSet(LoginRequiredMixin, ViewSet):
         file_uploaded = request.FILES.get('file_uploaded')
         if file_uploaded is None:
             return Response({'message': 'Image not send'}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
-        if file_uploaded.content_type == 'image/jpeg' or file_uploaded.content_type == 'image/png':
-            file = file_uploaded.file
+        elif file_uploaded.content_type == 'image/jpeg' or file_uploaded.content_type == 'image/png':
+            account_tier = AccountTier.objects.get(user=request.user).tier
             img = Image.create_image(owner=request.user, extension='.' + file_uploaded.name[-3:])
-            if img.url is not None:
-                save_photo(file=file, photo=img)
+            if account_tier.original_image:
+                img.upload_image(file_uploaded)
             thumbnail_sizes = AccountTier.objects.get(user=request.user).tier.thumbnail_sizes.order_by('-height')
             for thumbnail_size in thumbnail_sizes:
                 thumbnail = Thumbnail.create_thumbnail(image=img, thumbnail_size=thumbnail_size)
-                file = save_photo(file=file, photo=thumbnail)
+                file_uploaded = save_photo(file=file_uploaded, photo=thumbnail)
+                thumbnail.upload_thumbnail(file_uploaded)
             image = ImageSerializer(img)
             thumbnails = ThumbnailSerialzer(Thumbnail.objects.filter(image=img).order_by('thumbnail_size__height'),
                                             many=True)

@@ -1,7 +1,8 @@
-from . import models
+from django.core.files import File
 from PIL import Image
 from math import ceil
 import io
+from . import models
 
 
 def resize_thumbnail(file, height):
@@ -12,18 +13,13 @@ def resize_thumbnail(file, height):
 
 
 def save_photo(file, photo):
-    if not isinstance(photo, (models.Thumbnail, models.Image)):
+    if not isinstance(photo, models.Thumbnail):
         raise TypeError
-    elif isinstance(photo, models.Thumbnail):
-        image = resize_thumbnail(file, photo.thumbnail_size.height)
-        image.save(photo.url[1:])
-    else:
-        image = Image.open(file)
-        image.save(photo.url[1:])
-        return file
+    image = resize_thumbnail(file, photo.thumbnail_size.height)
     img_bytes = io.BytesIO()
     if photo.name[-3:] == 'jpg':
         image.save(img_bytes, format='jpeg')
     else:
         image.save(img_bytes, format='png')
-    return img_bytes
+    thumbnail = File(img_bytes, name=photo.name)
+    return thumbnail
