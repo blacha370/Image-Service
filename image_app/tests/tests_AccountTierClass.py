@@ -39,19 +39,20 @@ class AccountTierClassTestCase(TestCase):
 
     def test_create_account_tier_class_with_same_thumbnails_and_original_image(self):
         self.assertEqual(AccountTierClass.objects.count(), 0)
-        account_tier_class = AccountTierClass.get_or_create_validated(name='Basic', thumbnail_sizes=self.thumbnails)
+        account_tier_class = AccountTierClass.get_or_create_validated(name='Basic', thumbnail_sizes=self.thumbnails,
+                                                                      original_image=True)
         self.assertEqual(AccountTierClass.objects.count(), 1)
         self.assertEqual(account_tier_class.name, 'Basic')
         self.assertEqual(account_tier_class.thumbnail_sizes.count(), len(self.thumbnails))
-        self.assertFalse(account_tier_class.original_image)
+        self.assertTrue(account_tier_class.original_image)
         self.assertFalse(account_tier_class.expires_link)
 
         account_tier_class = AccountTierClass.get_or_create_validated(name='Pro', thumbnail_sizes=self.thumbnails,
-                                                                      expires_link=True)
+                                                                      original_image=True, expires_link=True)
         self.assertEqual(AccountTierClass.objects.count(), 2)
         self.assertEqual(account_tier_class.name, 'Pro')
         self.assertEqual(account_tier_class.thumbnail_sizes.count(), len(self.thumbnails))
-        self.assertFalse(account_tier_class.original_image)
+        self.assertTrue(account_tier_class.original_image)
         self.assertTrue(account_tier_class.expires_link)
 
     def test_create_account_tier_class_with_same_thumbnails_and_expires_link(self):
@@ -119,7 +120,7 @@ class AccountTierClassTestCase(TestCase):
         self.assertEqual(account_tier_class.name, 'Pro')
         self.assertEqual(account_tier_class.thumbnail_sizes.count(), len(self.thumbnails) - 1)
         self.assertFalse(account_tier_class.original_image)
-        self.assertTrue(account_tier_class.expires_link)
+        self.assertFalse(account_tier_class.expires_link)
 
     def test_create_account_tier_class_with_same_expires_link(self):
         self.assertEqual(AccountTierClass.objects.count(), 0)

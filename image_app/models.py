@@ -1,7 +1,7 @@
 from django.db import models
 from django.core.validators import MinValueValidator
 from django.contrib.auth.models import User
-from datetime import datetime
+from datetime import datetime, timedelta
 from .functions import save_photo
 from django.core.files import File
 
@@ -33,10 +33,12 @@ class AccountTierClass(models.Model):
     @classmethod
     def get_or_create_validated(cls, name, thumbnail_sizes, original_image=False, expires_link=False):
         if not isinstance(name, str) or [size for size in thumbnail_sizes if not isinstance(size, ThumbnailSize)] \
-                or not len(thumbnail_sizes )or not isinstance(original_image, bool) or not \
+                or not len(thumbnail_sizes) or not isinstance(original_image, bool) or not \
                 isinstance(expires_link, bool):
             raise TypeError
-        elif len(name) > 50 or cls.objects.filter(name=name) or\
+        if not original_image:
+            expires_link = False
+        if len(name) > 50 or cls.objects.filter(name=name) or\
                 cls._check_if_same_tier_class_exists(thumbnail_sizes, original_image, expires_link):
             raise ValueError
         account_tier_class = cls(name=name, original_image=original_image, expires_link=expires_link)
@@ -154,3 +156,22 @@ class Thumbnail(models.Model):
     @property
     def size(self):
         return str(self.thumbnail_size.height) + 'px'
+
+
+class ExpiringLink(models.Model):
+    image = models.ForeignKey(Image, on_delete=models.CASCADE)
+    name = models.CharField(max_length=50, unique=True)
+    expiring_time = models.DateTimeField()
+
+    @classmethod
+    def generate(cls, image, seconds):
+        if not isinstance(image, Image) or not isinstance(seconds, int) or isinstance(seconds, bool):
+            raise TypeError
+        if not 300 <= seconds <= 30000 or image.url.name == '':
+            raise ValueError
+        now = datetime.now()
+        name = str(cls.objects.count()) + str(int(now.timestamp())) + image.name
+        expiring_time = now + timedelta(seconds=seconds)
+        link = cls(image=image, name=name, expiring_time=expiring_time)
+        link.save()
+        return link
