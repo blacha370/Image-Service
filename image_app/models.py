@@ -1,7 +1,7 @@
 from django.db import models
 from django.core.validators import MinValueValidator
 from django.contrib.auth.models import User
-from datetime import datetime, timedelta
+from django.utils import timezone
 from .functions import save_photo
 from django.core.files import File
 
@@ -95,7 +95,7 @@ class Image(models.Model):
     def _generate_name(cls, extension, owner):
         if extension not in ['.jpg', '.png']:
             raise ValueError
-        name = str(owner.pk) + str(int(datetime.now().timestamp())) + str(cls.objects.filter(owner=owner).count())
+        name = str(owner.pk) + str(int(timezone.now().timestamp())) + str(cls.objects.filter(owner=owner).count())
         return name + extension
 
     @classmethod
@@ -169,9 +169,9 @@ class ExpiringLink(models.Model):
             raise TypeError
         if not 300 <= seconds <= 30000 or image.url.name == '':
             raise ValueError
-        now = datetime.now()
+        now = timezone.now()
         name = str(cls.objects.count()) + str(int(now.timestamp())) + image.name
-        expiring_time = now + timedelta(seconds=seconds)
+        expiring_time = now + timezone.timedelta(seconds=seconds)
         link = cls(image=image, name=name, expiring_time=expiring_time)
         link.save()
         return link

@@ -1,11 +1,11 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http.response import HttpResponse
+from django.utils import timezone
 from rest_framework.viewsets import ViewSet, ReadOnlyModelViewSet
 from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from datetime import datetime
 from .serializers import *
 from .models import Image, AccountTier, Thumbnail, ExpiringLink
 
@@ -82,7 +82,7 @@ class GenerateExpiringLink(LoginRequiredMixin, ViewSet):
 class GetImage(APIView):
     def get(self, request, expiring_name):
         try:
-            link = ExpiringLink.objects.get(name=expiring_name, expiring_time__gte=datetime.now())
+            link = ExpiringLink.objects.get(name=expiring_name, expiring_time__gte=timezone.now())
             if link.image.name.endswith('.jpg'):
                 return HttpResponse(link.image.url.read(), content_type='image/jpeg')
             elif link.image.name.endswith('.jpg'):
