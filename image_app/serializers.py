@@ -1,7 +1,6 @@
 from rest_framework.serializers import Serializer, ImageField, SerializerMethodField, ModelSerializer
 from collections import OrderedDict
 from .models import Image, Thumbnail
-from pprint import pprint
 
 
 class UploadSerializer(Serializer):
@@ -45,7 +44,6 @@ class ImageWithThumbnailsSerializer(ImageSerializer):
         fields = ['name', 'url', 'thumbnails']
 
     def get_thumbnails(self, image):
-        pprint(self.__dict__)
         request = self.context.get('request')
         thumbnails = Thumbnail.objects.filter(image=image)
         thumbnails_serializer = ThumbnailSerialzer(thumbnails, many=True, context={'request': request})
