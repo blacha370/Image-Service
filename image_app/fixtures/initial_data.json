@@ -19,7 +19,7 @@
     "fields": {
       "name": "Basic",
       "original_image": false,
-      "expires_link": false,
+      "expiring_link": false,
       "thumbnail_sizes": [1]
     }
   },
@@ -29,7 +29,7 @@
     "fields": {
       "name": "Premium",
       "original_image": true,
-      "expires_link": false,
+      "expiring_link": false,
       "thumbnail_sizes": [1, 2]
     }
   },
@@ -39,7 +39,7 @@
     "fields": {
       "name": "Enterprise",
       "original_image": true,
-      "expires_link": true,
+      "expiring_link": true,
       "thumbnail_sizes": [1, 2]
     }
   }
