@@ -1,10 +1,29 @@
 version: "3.8"
 
 services:
-  web:
-    build: .
-    command: ./prepare_app.sh
-    volumes:
-      - .:/code
+  nginx:
+    image: nginx
+    build: ./nginx
     ports:
-      - "8000:8000"
+      - 80:1300
+    volumes:
+      - static_volume:/home/app/image_service/static
+      - media_volume:/home/app/image_service/media
+    depends_on:
+      - web
+    restart: "on-failure"
+  web:
+    image: image_service
+    build: .
+    command: /home/app/image_service/prepare_app.sh
+    volumes:
+      - .:/image_service:rw
+      - static_volume:/home/app/image_service/static
+      - media_volume:/home/app/image_service/media
+    expose:
+      - 8000
+    restart: "on-failure"
+
+volumes:
+  static_volume:
+  media_volume:

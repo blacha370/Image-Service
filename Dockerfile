@@ -1,6 +1,15 @@
 FROM python:3
-ENV PYTHONUNBUFFERED=1
-WORKDIR /code
-COPY requirements.txt /code/
+
+ENV IMAGE_SERVICE=/home/app/image_service
+
+RUN mkdir -p $IMAGE_SERVICE
+RUN mkdir -p $IMAGE_SERVICE/static
+RUN mkdir -p $IMAGE_SERVICE/media
+
+WORKDIR $IMAGE_SERVICE
+
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+COPY . $IMAGE_SERVICE
 RUN pip install -r requirements.txt
-COPY . /code/
