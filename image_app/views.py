@@ -1,4 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth import authenticate, login
 from django.http.response import HttpResponse
 from django.utils import timezone
 from rest_framework.viewsets import ViewSet, ReadOnlyModelViewSet
@@ -91,3 +92,25 @@ class GetImage(APIView):
                 return Response({'message': 'Unsupported media type'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except (ExpiringLink.DoesNotExist, FileNotFoundError):
             return Response({'message': 'Resource not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class Login(ViewSet):
+    serializer_class = LoginSerializer
+
+    def post(self, request):
+        user = authenticate(request, username=request.data['username'], password=request.data['password'])
+        if user is not None:
+            login(request, user)
+            return Response({'message': 'Authenticated'}, status=status.HTTP_200_OK)
+        return Response({'message': 'Wrong credentials'}, status=status.HTTP_403_FORBIDDEN)
+
+
+class Navigation(APIView):
+    def get(self, request):
+        return Response({'urls': {
+            'login': request.build_absolute_uri('login/'),
+            'images': request.build_absolute_uri('images/'),
+            'images details': request.build_absolute_uri('images/details/'),
+            'upload_image': request.build_absolute_uri('upload/'),
+            'generate expiring link': request.build_absolute_uri('link/')
+        }}, status=status.HTTP_200_OK)

@@ -1,3 +1,4 @@
+from django.forms import PasswordInput
 from rest_framework import serializers
 from collections import OrderedDict
 from .models import Image, Thumbnail, ExpiringLink
@@ -80,3 +81,11 @@ class ExpiringLinkSerializer(serializers.ModelSerializer):
     def get_url(self, expiring_link):
         request = self.context.get('request')
         return request.build_absolute_uri(expiring_link.name)
+
+
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField()
+
+    class Meta:
+        fields = ['username', 'password']
