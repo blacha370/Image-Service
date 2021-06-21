@@ -30,6 +30,9 @@ class UploadViewSet(LoginRequiredMixin, ViewSet):
                 return Response(image.data, status=status.HTTP_201_CREATED)
             except AccountTier.DoesNotExist:
                 return Response({'message': 'Not allowed to upload images'}, status=status.HTTP_403_FORBIDDEN)
+            except ValueError:
+                return Response({'message': 'Not supported file extension. Supported extensions: .jpg, .png'},
+                                status=status.HTTP_422_UNPROCESSABLE_ENTITY)
         return Response({'message': 'Unsupported media type. Valid media types: "image/jpeg", "image/png"'},
                         status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
 
