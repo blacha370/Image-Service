@@ -1,18 +1,18 @@
-from rest_framework.serializers import Serializer, ImageField, SerializerMethodField, ModelSerializer
+from rest_framework import serializers
 from collections import OrderedDict
-from .models import Image, Thumbnail
+from .models import Image, Thumbnail, ExpiringLink
 
 
-class UploadSerializer(Serializer):
-    file_uploaded = ImageField()
+class UploadSerializer(serializers.Serializer):
+    file_uploaded = serializers.ImageField()
 
     class Meta:
         fields = ['file_uploaded']
 
 
-class ImageSerializer(ModelSerializer):
-    url = SerializerMethodField()
-    details = SerializerMethodField()
+class ImageSerializer(serializers.ModelSerializer):
+    url = serializers.SerializerMethodField()
+    details = serializers.SerializerMethodField()
 
     class Meta:
         model = Image
@@ -26,10 +26,8 @@ class ImageSerializer(ModelSerializer):
         return request.build_absolute_uri(url)
 
     def get_details(self, image):
-        if not self.context.get('details'):
-            return None
         request = self.context.get('request')
-        return request.build_absolute_uri('/images/' + image.name)
+        return request.build_absolute_uri('/images/details/' + image.name)
 
     def to_representation(self, instance):
         result = super(ImageSerializer, self).to_representation(instance)
@@ -37,7 +35,7 @@ class ImageSerializer(ModelSerializer):
 
 
 class ImageWithThumbnailsSerializer(ImageSerializer):
-    thumbnails = SerializerMethodField()
+    thumbnails = serializers.SerializerMethodField()
 
     class Meta:
         model = Image
@@ -50,8 +48,8 @@ class ImageWithThumbnailsSerializer(ImageSerializer):
         return thumbnails_serializer.data
 
 
-class ThumbnailSerialzer(ModelSerializer):
-    url = SerializerMethodField()
+class ThumbnailSerialzer(serializers.ModelSerializer):
+    url = serializers.SerializerMethodField()
 
     class Meta:
         model = Thumbnail
@@ -62,3 +60,23 @@ class ThumbnailSerialzer(ModelSerializer):
         request = self.context.get('request')
         return request.build_absolute_uri(url)
 
+
+class LinkGeneratorSerilaizer(serializers.Serializer):
+    image_name = serializers.CharField()
+    seconds = serializers.IntegerField()
+
+    class Meta:
+        fields = ['image_name', 'seconds']
+
+
+class ExpiringLinkSerializer(serializers.ModelSerializer):
+    expiring_time = serializers.DateTimeField(format="%H:%M:%S %d.%m.%y")
+    url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ExpiringLink
+        fields = ['url', 'expiring_time']
+
+    def get_url(self, expiring_link):
+        request = self.context.get('request')
+        return request.build_absolute_uri(expiring_link.name)
