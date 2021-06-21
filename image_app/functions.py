@@ -15,11 +15,11 @@ def resize_thumbnail(file, height):
 def save_photo(file, photo):
     if not isinstance(photo, models.Thumbnail):
         raise TypeError
-    image = resize_thumbnail(file, photo.thumbnail_size.height)
     img_bytes = io.BytesIO()
+    image = resize_thumbnail(file, photo.thumbnail_size.height)
     if photo.name[-3:] == 'jpg':
         image.save(img_bytes, format='jpeg')
     else:
         image.save(img_bytes, format='png')
-    thumbnail = File(img_bytes, name=photo.name)
-    return thumbnail
+    file = File(img_bytes, name=photo.name)
+    return file

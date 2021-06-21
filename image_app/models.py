@@ -2,7 +2,8 @@ from django.db import models
 from django.core.validators import MinValueValidator
 from django.contrib.auth.models import User
 from datetime import datetime
-from image_service.settings import MEDIA_URL
+from .functions import save_photo
+from django.core.files import File
 
 
 class ThumbnailSize(models.Model):
@@ -90,25 +91,27 @@ class Image(models.Model):
 
     @classmethod
     def _generate_name(cls, extension, owner):
+        if extension not in ['.jpg', '.png']:
+            raise ValueError
         name = str(owner.pk) + str(int(datetime.now().timestamp())) + str(cls.objects.filter(owner=owner).count())
         return name + extension
 
     @classmethod
-    def create_image(cls, owner, extension):
-        if not isinstance(owner, User) or not isinstance(extension, str):
+    def create_image(cls, owner, file):
+        if not isinstance(owner, User) or not isinstance(file, File):
             raise TypeError
-        if extension not in ['.jpg', '.png']:
-            raise ValueError
-        name = cls._generate_name(extension, owner)
+        account_tier = AccountTier.objects.get(user=owner).tier
+        name = cls._generate_name(file.name[-4:], owner)
         image = cls(name=name, owner=owner)
         image.save()
+        if account_tier.original_image:
+            image._upload_image(file)
         return image
 
-    def upload_image(self, file):
+    def _upload_image(self, file):
         file.name = self.name
         self.url = file
         self.save()
-        return self.url
 
 
 class Thumbnail(models.Model):
@@ -130,21 +133,23 @@ class Thumbnail(models.Model):
         return name
 
     @classmethod
-    def create_thumbnail(cls, image, thumbnail_size):
-        if not isinstance(image, Image) or not isinstance(thumbnail_size, ThumbnailSize):
+    def create_thumbnail(cls, image, thumbnail_size, file):
+        if not isinstance(image, Image) or not isinstance(thumbnail_size, ThumbnailSize) or not isinstance(file, File):
             raise TypeError
-        if thumbnail_size not in AccountTier.objects.get(user=image.owner).tier.thumbnail_sizes.all():
+        if thumbnail_size not in AccountTier.objects.get(user=image.owner).tier.thumbnail_sizes.all() or \
+                Thumbnail.objects.filter(image=image, thumbnail_size=thumbnail_size).count():
             raise ValueError
         name = cls._generate_name(image, thumbnail_size)
         thumbnail = cls(name=name, image=image, thumbnail_size=thumbnail_size)
         thumbnail.save()
-        return thumbnail
+        file = save_photo(file, thumbnail)
+        thumbnail._upload_thumbnail(file)
+        return file, thumbnail
 
-    def upload_thumbnail(self, file):
+    def _upload_thumbnail(self, file):
         file.name = self.name
         self.url = file
         self.save()
-        return self.url
 
     @property
     def size(self):

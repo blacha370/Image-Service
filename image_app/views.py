@@ -5,7 +5,6 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import UploadSerializer, ImageSerializer, ImageWithThumbnailsSerializer
 from .models import Image, AccountTier, Thumbnail
-from .functions import save_photo
 
 
 class UploadViewSet(LoginRequiredMixin, ViewSet):
@@ -18,14 +17,11 @@ class UploadViewSet(LoginRequiredMixin, ViewSet):
         elif file_uploaded.content_type == 'image/jpeg' or file_uploaded.content_type == 'image/png':
             try:
                 account_tier = AccountTier.objects.get(user=request.user).tier
-                img = Image.create_image(owner=request.user, extension='.' + file_uploaded.name[-3:])
-                if account_tier.original_image:
-                    img.upload_image(file_uploaded)
+                img = Image.create_image(owner=request.user, file=file_uploaded)
                 thumbnail_sizes = account_tier.thumbnail_sizes.order_by('-height')
                 for thumbnail_size in thumbnail_sizes:
-                    thumbnail = Thumbnail.create_thumbnail(image=img, thumbnail_size=thumbnail_size)
-                    file_uploaded = save_photo(file=file_uploaded, photo=thumbnail)
-                    thumbnail.upload_thumbnail(file_uploaded)
+                    file_uploaded, thumbnail = Thumbnail.create_thumbnail(image=img, thumbnail_size=thumbnail_size,
+                                                                          file=file_uploaded)
                 image = ImageWithThumbnailsSerializer(img, context={'request': request})
                 return Response(image.data)
             except AccountTier.DoesNotExist:
