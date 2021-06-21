@@ -16,20 +16,22 @@ class UploadViewSet(LoginRequiredMixin, ViewSet):
         if file_uploaded is None:
             return Response({'message': 'Image not send'}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
         elif file_uploaded.content_type == 'image/jpeg' or file_uploaded.content_type == 'image/png':
-            account_tier = AccountTier.objects.get(user=request.user).tier
-            img = Image.create_image(owner=request.user, extension='.' + file_uploaded.name[-3:])
-            if account_tier.original_image:
-                img.upload_image(file_uploaded)
-            thumbnail_sizes = AccountTier.objects.get(user=request.user).tier.thumbnail_sizes.order_by('-height')
-            for thumbnail_size in thumbnail_sizes:
-                thumbnail = Thumbnail.create_thumbnail(image=img, thumbnail_size=thumbnail_size)
-                file_uploaded = save_photo(file=file_uploaded, photo=thumbnail)
-                thumbnail.upload_thumbnail(file_uploaded)
-            image = ImageWithThumbnailsSerializer(img, context={'request': request})
-            return Response(image.data)
-        return Response(
-            {'message': 'Unsupported media type. Valid media types: "image/jpeg", "image/png"'},
-            status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
+            try:
+                account_tier = AccountTier.objects.get(user=request.user).tier
+                img = Image.create_image(owner=request.user, extension='.' + file_uploaded.name[-3:])
+                if account_tier.original_image:
+                    img.upload_image(file_uploaded)
+                thumbnail_sizes = account_tier.thumbnail_sizes.order_by('-height')
+                for thumbnail_size in thumbnail_sizes:
+                    thumbnail = Thumbnail.create_thumbnail(image=img, thumbnail_size=thumbnail_size)
+                    file_uploaded = save_photo(file=file_uploaded, photo=thumbnail)
+                    thumbnail.upload_thumbnail(file_uploaded)
+                image = ImageWithThumbnailsSerializer(img, context={'request': request})
+                return Response(image.data)
+            except AccountTier.DoesNotExist:
+                return Response({'message': 'Not allowed to upload images'}, status=status.HTTP_403_FORBIDDEN)
+        return Response({'message': 'Unsupported media type. Valid media types: "image/jpeg", "image/png"'},
+                        status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
 
 
 class ListImages(LoginRequiredMixin, APIView):
