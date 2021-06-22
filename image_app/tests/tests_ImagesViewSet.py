@@ -26,7 +26,7 @@ class ImagesViewSetTestCase(APITestCase):
         AccountTier.add_user_to_account_tier(self.account_tier_class, self.user)
 
     def test_without_images(self):
-        request = self.factory.get('images2/')
+        request = self.factory.get('images/')
         force_authenticate(request, self.user)
         request.user = self.user
         response = self.view(request)
