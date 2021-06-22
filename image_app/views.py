@@ -98,9 +98,11 @@ class GetImage(APIView):
         try:
             link = ExpiringLink.objects.get(name=expiring_name, expiring_time__gte=timezone.now())
             if link.image.name.endswith('.jpg'):
-                return HttpResponse(link.image.url.read(), content_type='image/jpeg')
-            elif link.image.name.endswith('.jpg'):
-                return HttpResponse(link.image.url.read(), content_type='image/png')
+                with link.image.url as file:
+                    return HttpResponse(file.read(), content_type='image/jpeg')
+            elif link.image.name.endswith('.png'):
+                with link.image.url as file:
+                    return HttpResponse(file.read(), content_type='image/png')
             else:
                 return Response({'message': 'Unsupported media type'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except (ExpiringLink.DoesNotExist, FileNotFoundError):
