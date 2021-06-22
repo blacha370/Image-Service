@@ -130,8 +130,6 @@ class Thumbnail(models.Model):
         index = image.name.rfind('.')
         image_name, extension = image.name[:index], image.name[index:]
         name = image_name + '_' + str(thumbnail_size.height) + extension
-        if cls.objects.filter(name=name).count():
-            raise ValueError
         return name
 
     @classmethod

@@ -156,3 +156,33 @@ class UploadViewSetTestCase(APITestCase):
         self.assertEqual(Image.objects.filter(owner=self.user).count(), 0)
         self.assertEqual(Thumbnail.objects.count(), 0)
         self.assertEqual(Thumbnail.objects.filter(image__owner=self.user).count(), 0)
+
+    def test_upload_image_without_account_tier(self):
+        request = self.factory.post('upload/', {'file_uploaded': self.file})
+        force_authenticate(request, self.user)
+        request.user = self.user
+        response = self.view(request)
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data['message'], 'Not allowed to upload images')
+        self.assertEqual(Image.objects.count(), 0)
+        self.assertEqual(Image.objects.filter(owner=self.user).count(), 0)
+        self.assertEqual(Thumbnail.objects.count(), 0)
+        self.assertEqual(Thumbnail.objects.filter(image__owner=self.user).count(), 0)
+
+    def test_upload_image_with_wrong_media_type(self):
+        img = PILImage.new('RGB', (1000, 1000), color='red')
+        img_bytes = io.BytesIO()
+        img.save(img_bytes, format='jpeg')
+        self.file = SimpleUploadedFile('uploaded_file.jpg', img_bytes.getvalue(), content_type='application/json')
+        AccountTier.add_user_to_account_tier(self.account_tier_classes[0], self.user)
+        request = self.factory.post('upload/', {'file_uploaded': self.file})
+        force_authenticate(request, self.user)
+        request.user = self.user
+        response = self.view(request)
+        self.assertEqual(response.status_code, 415)
+        self.assertEqual(response.data['message'],
+                         'Unsupported media type. Valid media types: "image/jpeg", "image/png"')
+        self.assertEqual(Image.objects.count(), 0)
+        self.assertEqual(Image.objects.filter(owner=self.user).count(), 0)
+        self.assertEqual(Thumbnail.objects.count(), 0)
+        self.assertEqual(Thumbnail.objects.filter(image__owner=self.user).count(), 0)

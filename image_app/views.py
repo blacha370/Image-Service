@@ -89,6 +89,8 @@ class GenerateExpiringLink(LoginRequiredMixin, ViewSet):
             return Response({'message': 'Image does not exists'}, status=status.HTTP_404_NOT_FOUND)
         except ValueError:
             return Response({'message': 'Not valid arguments'}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+        except TypeError:
+            return Response({'message': 'Not valid type of arguments'}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
 
 class GetImage(APIView):

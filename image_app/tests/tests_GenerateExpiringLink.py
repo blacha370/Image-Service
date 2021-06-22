@@ -411,3 +411,90 @@ class GenerateExpiringLinkTestCase(APITestCase):
         self.assertEqual(ExpiringLink.objects.count(), 0)
         self.assertEqual(ExpiringLink.objects.filter(image=image).count(), 0)
         os.remove('media/' + image.url.name)
+
+    def test_generate_expiring_link_with_wrong_int_as_seconds(self):
+        AccountTier.add_user_to_account_tier(self.account_tier_classes[2], self.user)
+        image = Image.create_image(self.user, self.file)
+        request = self.factory.post('link/', {'image_name': image.name, 'seconds': -1}, format='json')
+        force_authenticate(request, self.user)
+        request.user = self.user
+        response = self.view(request)
+        self.assertEqual(ExpiringLink.objects.count(), 0)
+        self.assertEqual(ExpiringLink.objects.filter(image=image).count(), 0)
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(response.data['message'], 'Not valid arguments')
+
+        request = self.factory.post('link/', {'image_name': image.name, 'seconds': 0}, format='json')
+        force_authenticate(request, self.user)
+        request.user = self.user
+        response = self.view(request)
+        self.assertEqual(ExpiringLink.objects.count(), 0)
+        self.assertEqual(ExpiringLink.objects.filter(image=image).count(), 0)
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(response.data['message'], 'Not valid arguments')
+
+        request = self.factory.post('link/', {'image_name': image.name, 'seconds': 1}, format='json')
+        force_authenticate(request, self.user)
+        request.user = self.user
+        response = self.view(request)
+        self.assertEqual(ExpiringLink.objects.count(), 0)
+        self.assertEqual(ExpiringLink.objects.filter(image=image).count(), 0)
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(response.data['message'], 'Not valid arguments')
+
+        request = self.factory.post('link/', {'image_name': image.name, 'seconds': 299}, format='json')
+        force_authenticate(request, self.user)
+        request.user = self.user
+        response = self.view(request)
+        self.assertEqual(ExpiringLink.objects.count(), 0)
+        self.assertEqual(ExpiringLink.objects.filter(image=image).count(), 0)
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(response.data['message'], 'Not valid arguments')
+
+        request = self.factory.post('link/', {'image_name': image.name, 'seconds': 30001}, format='json')
+        force_authenticate(request, self.user)
+        request.user = self.user
+        response = self.view(request)
+        self.assertEqual(ExpiringLink.objects.count(), 0)
+        self.assertEqual(ExpiringLink.objects.filter(image=image).count(), 0)
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(response.data['message'], 'Not valid arguments')
+        os.remove('media/' + image.url.name)
+
+    def test_generate_expiring_link_with_not_int_as_seconds(self):
+        AccountTier.add_user_to_account_tier(self.account_tier_classes[2], self.user)
+        image = Image.create_image(self.user, self.file)
+        values = ['', ' ', '1', 'text', -1.1, 1.1, True, False]
+        for value in values:
+            request = self.factory.post('link/', {'image_name': image.name, 'seconds': value}, format='json')
+            force_authenticate(request, self.user)
+            request.user = self.user
+            response = self.view(request)
+            self.assertEqual(response.status_code, 422)
+            self.assertEqual(response.data['message'], 'Not valid arguments')
+        values = [None, list(), tuple(), dict(), set()]
+        for value in values:
+            request = self.factory.post('link/', {'image_name': image.name, 'seconds': value}, format='json')
+            force_authenticate(request, self.user)
+            request.user = self.user
+            response = self.view(request)
+            self.assertEqual(response.status_code, 422)
+            self.assertEqual(response.data['message'], 'Not valid type of arguments')
+        self.assertEqual(ExpiringLink.objects.count(), 0)
+        self.assertEqual(ExpiringLink.objects.filter(image=image).count(), 0)
+        os.remove('media/' + image.url.name)
+
+    def test_generate_expiring_link_with_not_string_as_image_name(self):
+        AccountTier.add_user_to_account_tier(self.account_tier_classes[2], self.user)
+        image = Image.create_image(self.user, self.file)
+        values = [1, 0, 1, -1.1, 1.1, True, False, None, list(), tuple(), dict(), set()]
+        for value in values:
+            request = self.factory.post('link/', {'image_name': value, 'seconds': 300}, format='json')
+            force_authenticate(request, self.user)
+            request.user = self.user
+            response = self.view(request)
+            self.assertEqual(response.status_code, 404)
+            self.assertEqual(response.data['message'], 'Image does not exists')
+        self.assertEqual(ExpiringLink.objects.count(), 0)
+        self.assertEqual(ExpiringLink.objects.filter(image=image).count(), 0)
+        os.remove('media/' + image.url.name)
