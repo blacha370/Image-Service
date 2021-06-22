@@ -73,10 +73,18 @@ class GenerateExpiringLink(LoginRequiredMixin, ViewSet):
 
     def create(self, request):
         try:
-            image = Image.objects.get(owner=request.user, name=request.data['image_name'])
-            link = ExpiringLink.generate(image, int(request.data['seconds']))
-            link = ExpiringLinkSerializer(link, context={'request': request})
-            return Response(link.data)
+            if AccountTier.objects.get(user=request.user).tier.expiring_link:
+                image = Image.objects.get(owner=request.user, name=request.data['image_name'])
+                if image.url.name == '':
+                    return Response({'message': 'Image not valid to generate expiring link'},
+                                    status=status.HTTP_409_CONFLICT)
+                link = ExpiringLink.generate(image, int(request.data['seconds']))
+                link = ExpiringLinkSerializer(link, context={'request': request})
+                return Response(link.data)
+            else:
+                return Response({'message': 'Not allowed to generate expiring link'}, status=status.HTTP_403_FORBIDDEN)
+        except AccountTier.DoesNotExist:
+            return Response({'message': 'Not allowed to generate expiring link'}, status=status.HTTP_403_FORBIDDEN)
         except Image.DoesNotExist:
             return Response({'message': 'Image does not exists'}, status=status.HTTP_404_NOT_FOUND)
         except ValueError:
